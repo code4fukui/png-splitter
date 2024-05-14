@@ -1,0 +1,84 @@
+<!DOCTYPE html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><link rel="icon" href="data:">
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+<title>PNG splitter</title>
+<meta property="og:title" content="PNG splitter">
+<meta name="twitter:card" content="summary_large_image"/>
+<!--
+<meta name="twitter:image" content="https://code4fukui.github.io/png-splitter/ogp.jpg">
+<meta property="og:image"  content="https://code4fukui.github.io/png-splitter/ogp.jpg">
+-->
+<script type="module">
+import { waitDropFiles } from "https://code4sabae.github.io/js/waitDropFiles.js";
+import { readAsArrayBufferAsync } from "https://code4sabae.github.io/js/readAsArrayBufferAsync.js";
+import { PNG } from "https://code4fukui.github.io/PNG/PNG.js";
+import { encodeData } from "https://code4fukui.github.io/dataencoder/encodeData.js";
+import { downloadZip } from "https://code4sabae.github.io/js/downloadZip.js";
+//import { downloadTextFile } from "https://code4sabae.github.io/js/downloadTextFile.js";
+import { downloadFile } from "https://code4sabae.github.io/js/downloadFile.js";
+
+window.onload = async () => {
+  for (;;) {
+    const items = await waitDropFiles(divmain);
+    const files = [];
+    let idx = 1;
+    for (const item of items) {
+      // console.log(item.type); // ignore item.type in Windows
+      const name = item.file.name.toLowerCase();
+      if (!name.endsWith(".png")) {
+        alert("ファイル形式が違います。PNGファイルをドロップしてください。")
+        return;
+      }
+      try {
+        const file = item.file;
+        const bin = new Uint8Array(await readAsArrayBufferAsync(file));
+        console.log(bin);
+        const imgs = PNG.decodeMulti(bin);
+        console.log(imgs);
+
+        divmain.innerHTML = "";
+        for (const img of imgs) {
+          const png = PNG.encode(img);
+          files.push({ name: idx++ + ".png", data: png });
+          const domimg = new Image();
+          domimg.src = encodeData("image/png", png);
+          divmain.appendChild(domimg);
+        }
+      } catch (e) {
+        console.log(e);
+        alert(`PNGファイル"${item.file.name}"の読み込みに失敗しました。データが正常かご確認ください。\n${e}` );
+        return;
+      }
+    }
+    if (files.length == 1) {
+        //downloadTextFile(files[0]);
+        downloadFile(files[0]);
+    } else {
+        downloadZip("pngs.zip", files);
+    }
+  }
+};
+</script>
+</head>
+<body>
+  
+<div class="jumbotron">
+  <h1 class="display-4">PNG splitter</h1>
+  <p class="lead">アニメーションPNGを分解します</p>
+</div>
+
+<div class="mx-5">
+  <div id="divmain" class="border px-5 mx-auto pt-3 pb-3">
+  PNGファイルをドロップしてください
+  </div>
+</div>
+
+<footer class="text-muted">
+  <div class="container my-4 mx-0">
+  <p>Design: <a href="https://getbootstrap.com/">Bootstrap</a> by <a href="https://twitter.com/mdo">@mdo</a></p>
+  <p>App: <a href=https://github.com/code4fukui/png-splitter/>src on GitHub</a></p>
+  <p>Related: <a href=https://code4fukui.github.io/jpgbeauty/>jpgbeauty</a></p>
+  </div>
+</footer>
+
+</body>
+</html>
